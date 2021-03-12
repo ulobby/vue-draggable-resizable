@@ -229,9 +229,6 @@ export default {
     onResize: {
       type: Function,
       default: () => true
-    },
-    isConflictCheck: {
-      type: Boolean, default: false
     }
   },
 
@@ -284,9 +281,8 @@ export default {
 
     this.parentWidth = parentWidth
     this.parentHeight = parentHeight
-    const [width, height] = getComputedSize(this.$el)
 
-    this.settingAttribute()
+    const [width, height] = getComputedSize(this.$el)
 
     this.aspectFactor = (this.w !== 'auto' ? this.w : width) / (this.h !== 'auto' ? this.h : height)
 
@@ -317,52 +313,6 @@ export default {
   },
 
   methods: {
-    conflictCheck () {
-      const top = this.top
-      const left = this.left
-      const width = this.width
-      const height = this.height
-      if (this.isConflictCheck) {
-        const nodes = this.$el.parentNode.childNodes // 获取当前父节点下所有子节点
-        for (let item of nodes) {
-          if (item.className !== undefined && !item.className.includes(this.classNameActive) && item.getAttribute('data-is-check') !== null && item.getAttribute('data-is-check') !== 'false') {
-            const tw = item.offsetWidth
-            const th = item.offsetHeight
-            // 正则获取left与right
-            let [tl, tt] = this.formatTransformVal(item.style.transform)
-            // 左上角与右下角重叠
-            const tfAndBr = (top >= tt && left >= tl && tt + th > top && tl + tw > left) || (top <= tt && left < tl && top + height > tt && left + width > tl)
-            // 右上角与左下角重叠
-            const brAndTf = (left <= tl && top >= tt && left + width > tl && top < tt + th) || (top < tt && left > tl && top + height > tt && left < tl + tw)
-            // 下边与上边重叠
-            const bAndT = (top <= tt && left >= tl && top + height > tt && left < tl + tw) || (top >= tt && left <= tl && top < tt + th && left > tl + tw)
-            // 上边与下边重叠（宽度不一样）
-            const tAndB = (top <= tt && left >= tl && top + height > tt && left < tl + tw) || (top >= tt && left <= tl && top < tt + th && left > tl + tw)
-            // 左边与右边重叠
-            const lAndR = (left >= tl && top >= tt && left < tl + tw && top < tt + th) || (top > tt && left <= tl && left + width > tl && top < tt + th)
-            // 左边与右边重叠（高度不一样）
-            const rAndL = (top <= tt && left >= tl && top + height > tt && left < tl + tw) || (top >= tt && left <= tl && top < tt + th && left + width > tl)
-            // 如果冲突，就将回退到移动前的位置
-            if (tfAndBr || brAndTf || bAndT || tAndB || lAndR || rAndL) {
-              this.top = this.mouseClickPosition.top
-              this.left = this.mouseClickPosition.left
-              this.right = this.mouseClickPosition.right
-              this.bottom = this.mouseClickPosition.bottom
-              this.width = this.mouseClickPosition.w
-              this.height = this.mouseClickPosition.h
-            }
-          }
-        }
-      }
-    },
-    formatTransformVal (string) {
-      let [left, top] = string.replace(/[^0-9\-,]/g, '').split(',')
-      if (top === undefined) top = 0
-      return [+left, +top]
-    },
-    settingAttribute () {
-      this.$el.setAttribute('data-is-check', `${this.isConflictCheck}`)
-    },
     resetBoundsAndMouseState () {
       this.mouseClickPosition = { mouseX: 0, mouseY: 0, x: 0, y: 0, w: 0, h: 0 }
 
@@ -808,24 +758,20 @@ export default {
       this.width = width
       this.height = height
     },
-    async handleUp (e) {
+    handleUp (e) {
       this.handle = null
-      const temArr = new Array(3).fill({ display: false, position: '', origin: '', lineLength: '' })
-      const refLine = { vLine: [], hLine: [] }
-      for (let i in refLine) { refLine[i] = JSON.parse(JSON.stringify(temArr)) }
+
+      this.resetBoundsAndMouseState()
+
       if (this.resizing) {
         this.resizing = false
-        await this.conflictCheck()
-        this.$emit('refLineParams', refLine)
         this.$emit('resizestop', this.left, this.top, this.width, this.height)
       }
       if (this.dragging) {
         this.dragging = false
-        await this.conflictCheck()
-        this.$emit('refLineParams', refLine)
         this.$emit('dragstop', this.left, this.top)
       }
-      this.resetBoundsAndMouseState()
+
       removeEvent(document.documentElement, eventsFor.move, this.handleResize)
     }
   },

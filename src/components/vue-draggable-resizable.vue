@@ -229,6 +229,9 @@ export default {
     onResize: {
       type: Function,
       default: () => true
+    },
+    parentClass: {
+      type: String
     }
   },
 
@@ -339,7 +342,7 @@ export default {
     },
     getParentSize () {
       if (this.parent) {
-        const style = window.getComputedStyle(this.$el.parentNode, null)
+        const style = window.getComputedStyle(document.querySelector(this.parentClass), null)
 
         return [
           parseInt(style.getPropertyValue('width'), 10),
